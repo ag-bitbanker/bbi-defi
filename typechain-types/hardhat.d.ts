@@ -90,17 +90,21 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.BbFix__factory>;
     getContractFactory(
-      name: "BbFixICO",
+      name: "BbFixPool",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.BbFixICO__factory>;
+    ): Promise<Contracts.BbFixPool__factory>;
     getContractFactory(
-      name: "BitBankerUSD",
+      name: "BbUSD",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.BitBankerUSD__factory>;
+    ): Promise<Contracts.BbUSD__factory>;
     getContractFactory(
       name: "Faucet",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Faucet__factory>;
+    getContractFactory(
+      name: "ERC1155Receiver",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ERC1155Receiver__factory>;
     getContractFactory(
       name: "Lock",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -210,20 +214,25 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.BbFix>;
     getContractAt(
-      name: "BbFixICO",
+      name: "BbFixPool",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
-    ): Promise<Contracts.BbFixICO>;
+    ): Promise<Contracts.BbFixPool>;
     getContractAt(
-      name: "BitBankerUSD",
+      name: "BbUSD",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
-    ): Promise<Contracts.BitBankerUSD>;
+    ): Promise<Contracts.BbUSD>;
     getContractAt(
       name: "Faucet",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.Faucet>;
+    getContractAt(
+      name: "ERC1155Receiver",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ERC1155Receiver>;
     getContractAt(
       name: "Lock",
       address: string | ethers.Addressable,
@@ -317,17 +326,21 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.BbFix>;
     deployContract(
-      name: "BbFixICO",
+      name: "BbFixPool",
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.BbFixICO>;
+    ): Promise<Contracts.BbFixPool>;
     deployContract(
-      name: "BitBankerUSD",
+      name: "BbUSD",
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.BitBankerUSD>;
+    ): Promise<Contracts.BbUSD>;
     deployContract(
       name: "Faucet",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Faucet>;
+    deployContract(
+      name: "ERC1155Receiver",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ERC1155Receiver>;
     deployContract(
       name: "Lock",
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -437,20 +450,25 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.BbFix>;
     deployContract(
-      name: "BbFixICO",
+      name: "BbFixPool",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.BbFixICO>;
+    ): Promise<Contracts.BbFixPool>;
     deployContract(
-      name: "BitBankerUSD",
+      name: "BbUSD",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.BitBankerUSD>;
+    ): Promise<Contracts.BbUSD>;
     deployContract(
       name: "Faucet",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Faucet>;
+    deployContract(
+      name: "ERC1155Receiver",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ERC1155Receiver>;
     deployContract(
       name: "Lock",
       args: any[],

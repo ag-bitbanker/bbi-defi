@@ -27,12 +27,13 @@ export interface BbFixInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "DEFAULT_ADMIN_ROLE"
-      | "OPERATOR_ROLE"
+      | "MINTER_ROLE"
       | "URI_SETTER_ROLE"
       | "balanceOf"
       | "balanceOfBatch"
       | "burn"
       | "burnBatch"
+      | "decimals"
       | "exists"
       | "getRoleAdmin"
       | "grantRole"
@@ -40,6 +41,7 @@ export interface BbFixInterface extends Interface {
       | "isApprovedForAll"
       | "mint"
       | "mintBatch"
+      | "name"
       | "renounceRole"
       | "revokeRole"
       | "safeBatchTransferFrom"
@@ -47,6 +49,7 @@ export interface BbFixInterface extends Interface {
       | "setApprovalForAll"
       | "setURI"
       | "supportsInterface"
+      | "symbol"
       | "totalSupply()"
       | "totalSupply(uint256)"
       | "uri"
@@ -68,7 +71,7 @@ export interface BbFixInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "OPERATOR_ROLE",
+    functionFragment: "MINTER_ROLE",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -91,6 +94,7 @@ export interface BbFixInterface extends Interface {
     functionFragment: "burnBatch",
     values: [AddressLike, BigNumberish[], BigNumberish[]]
   ): string;
+  encodeFunctionData(functionFragment: "decimals", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "exists",
     values: [BigNumberish]
@@ -119,6 +123,7 @@ export interface BbFixInterface extends Interface {
     functionFragment: "mintBatch",
     values: [AddressLike, BigNumberish[], BigNumberish[], BytesLike]
   ): string;
+  encodeFunctionData(functionFragment: "name", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "renounceRole",
     values: [BytesLike, AddressLike]
@@ -150,6 +155,7 @@ export interface BbFixInterface extends Interface {
     functionFragment: "supportsInterface",
     values: [BytesLike]
   ): string;
+  encodeFunctionData(functionFragment: "symbol", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "totalSupply()",
     values?: undefined
@@ -165,7 +171,7 @@ export interface BbFixInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "OPERATOR_ROLE",
+    functionFragment: "MINTER_ROLE",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -179,6 +185,7 @@ export interface BbFixInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "burn", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "burnBatch", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "decimals", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "exists", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getRoleAdmin",
@@ -192,6 +199,7 @@ export interface BbFixInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "mint", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "mintBatch", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "name", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "renounceRole",
     data: BytesLike
@@ -214,6 +222,7 @@ export interface BbFixInterface extends Interface {
     functionFragment: "supportsInterface",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "symbol", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "totalSupply()",
     data: BytesLike
@@ -419,7 +428,7 @@ export interface BbFix extends BaseContract {
 
   DEFAULT_ADMIN_ROLE: TypedContractMethod<[], [string], "view">;
 
-  OPERATOR_ROLE: TypedContractMethod<[], [string], "view">;
+  MINTER_ROLE: TypedContractMethod<[], [string], "view">;
 
   URI_SETTER_ROLE: TypedContractMethod<[], [string], "view">;
 
@@ -446,6 +455,8 @@ export interface BbFix extends BaseContract {
     [void],
     "nonpayable"
   >;
+
+  decimals: TypedContractMethod<[], [bigint], "view">;
 
   exists: TypedContractMethod<[id: BigNumberish], [boolean], "view">;
 
@@ -490,6 +501,8 @@ export interface BbFix extends BaseContract {
     [void],
     "nonpayable"
   >;
+
+  name: TypedContractMethod<[], [string], "view">;
 
   renounceRole: TypedContractMethod<
     [role: BytesLike, callerConfirmation: AddressLike],
@@ -541,6 +554,8 @@ export interface BbFix extends BaseContract {
     "view"
   >;
 
+  symbol: TypedContractMethod<[], [string], "view">;
+
   "totalSupply()": TypedContractMethod<[], [bigint], "view">;
 
   "totalSupply(uint256)": TypedContractMethod<
@@ -559,7 +574,7 @@ export interface BbFix extends BaseContract {
     nameOrSignature: "DEFAULT_ADMIN_ROLE"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
-    nameOrSignature: "OPERATOR_ROLE"
+    nameOrSignature: "MINTER_ROLE"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "URI_SETTER_ROLE"
@@ -592,6 +607,9 @@ export interface BbFix extends BaseContract {
     [void],
     "nonpayable"
   >;
+  getFunction(
+    nameOrSignature: "decimals"
+  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "exists"
   ): TypedContractMethod<[id: BigNumberish], [boolean], "view">;
@@ -643,6 +661,9 @@ export interface BbFix extends BaseContract {
     [void],
     "nonpayable"
   >;
+  getFunction(
+    nameOrSignature: "name"
+  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "renounceRole"
   ): TypedContractMethod<
@@ -696,6 +717,9 @@ export interface BbFix extends BaseContract {
   getFunction(
     nameOrSignature: "supportsInterface"
   ): TypedContractMethod<[interfaceId: BytesLike], [boolean], "view">;
+  getFunction(
+    nameOrSignature: "symbol"
+  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "totalSupply()"
   ): TypedContractMethod<[], [bigint], "view">;

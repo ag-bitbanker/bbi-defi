@@ -4,171 +4,176 @@ pragma solidity ^0.8.22;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {bbFix} from "./bbFix.sol";
+import {ERC1155Receiver} from "./ERC1155Receiver.sol";
+import {Pool, PoolData, PoolState, InvalidParameters} from './Pool.sol';
 
-error InvalidParameters();
+import "hardhat/console.sol";
+
 error InvalidBalance();
+error InvalidAmount();
 error InvalidOperation();
 error InvalidToken();
 
-struct Pool {
-    uint256 price;                  // initial base token price, valid for [investmentStartDate,investmenEndDate]
-    uint256 investmentStartDate;    // accept deposits starting from this date     
-    uint256 investmenEndDate;       // last date to deposit funds
-    uint256 settlementDate;         // withdrawals will be enabled starting from settlementDate
-    uint256 lowWatermark;           // min base token amount to be collected to start investments
-    uint256 highWatermark;          // min base token amount to collect
-    uint256 balance;                // quote token balance
-    uint256 supply;                 // base token supply
-}
-
-contract bbFixPool is AccessControl {
+contract bbFixPool is ERC1155Receiver, Pool, AccessControl {
     // operator (trader)
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-    // price precision
-    uint256 constant public DENOMINATOR  = 10**18; 
     // base token (bbFix)
     bbFix public baseToken;
     // quote token (stable coin)
     ERC20 public quoteToken;
-    
-    mapping(uint256 tokenId => Pool ) public pools;
-
-    constructor(address base, address quote)
-    {
-        if ( base == address(0) || quote == address(0) || base == quote) {
+   
+    constructor(address base, address quote, address defaultAdmin) {
+        if (
+            base == address(0) ||
+            quote == address(0) ||
+            defaultAdmin == address(0) ||
+            base == quote
+        ) {
             revert InvalidParameters();
         }
         baseToken = bbFix(base);
         quoteToken = ERC20(quote);
+        _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
     }
 
+    function createPool(
+        uint256 tokenId,
+        uint256 price,
+        uint256 openDate,
+        uint256 closeDate,
+        uint256 settleDate,
+        uint256 minAmount,
+        uint256 maxAmount
 
-    function createPool(uint256 tokenId, uint256 price, uint256 investmentStartDate, uint256 investmenEndDate, uint256 settlementDate, uint256 lowWatermark, uint256 highWatermark) onlyRole(OPERATOR_ROLE) public  {
-        if ( investmentStartDate >= investmenEndDate || investmenEndDate >= settlementDate|| lowWatermark < highWatermark || price == 0 || price >= DENOMINATOR ) {
-            revert InvalidParameters();
-        }
-        Pool memory pool = Pool(price, investmentStartDate, investmenEndDate, settlementDate, lowWatermark, highWatermark, 0, 0);
-        pools[tokenId] = pool; 
-    }
-
-    function canInvest( uint256 tokenId) public view returns(bool) {
-        Pool memory pool = pools[tokenId];
-        _checkPool(pool);
-        return _canInvest(pool);
-    }
-
-    function canWidthdraw( uint256 tokenId) public view returns(bool) {
-        Pool memory pool = pools[tokenId];
-        _checkPool(pool);
-        return _canWidthdraw(pool);
-    }
-
-    function canRedeem( uint256 tokenId) public view returns(bool) {
-        Pool memory pool = pools[tokenId];
-        _checkPool(pool);
-        return _canRedeem(pool);
-    }
-
-    function withdrawFunds(uint256 tokenId) onlyRole(OPERATOR_ROLE) public  {
-        Pool memory pool = pools[tokenId];
-        _checkPool(pool);
-        if ( pool.investmenEndDate < block.timestamp) {
-            revert InvalidOperation();
-        }
-        if ( pool.supply < pool.lowWatermark) {
-            revert InvalidBalance();
-        }
-        // transfer all accumulated balance to operator
-        quoteToken.transfer(msg.sender,pool.balance);
-        pool.balance = 0;
-        // store in blockchain
-        pools[tokenId] = pool;
-    }
-
-    function depositReturns(uint256 tokenId, uint256 amount) public onlyRole(OPERATOR_ROLE) {
-        Pool memory pool = pools[tokenId];
-        _checkPool(pool);
-        if ( pool.investmenEndDate < block.timestamp) {
-            revert InvalidOperation();
-        }
-        if ( pool.balance + amount > pool.supply ) {
-            amount = pool.supply - pool.balance;
-        }
-        // transfer quote tokens to contract
-        quoteToken.transferFrom(msg.sender, address(this),amount);
-        // adjust pool balance
-        pool.balance += amount;
-        // store in blockchain
-        pools[tokenId] = pool;
-    }
-
-    function invest( uint256 tokenId, uint256 amount) public {
-        Pool memory pool = pools[tokenId];
-        _checkPool(pool);
-        if (!_canInvest(pool)) {
-             revert InvalidOperation();
-        }
-        // calculate amount of base token
-        uint256 amountBase = amount * pool.price / DENOMINATOR;
-        if ( pool.supply + amountBase > pool.highWatermark ) {
-            amountBase = pool.highWatermark - pool.supply;
-        }
-        // transfer quote token to contract
-        quoteToken.transferFrom( msg.sender, address(this), amount);
-        // adjust balance
-        pool.balance += amount;
-        // mint base token directly to sender
-        baseToken.mint(msg.sender, tokenId, amountBase, '0x');
-        // adjust supply
-        pool.supply += amountBase;
-        // store in blockchain
-        pools[tokenId] = pool;
-    }
-
-    function redeem( uint256 tokenId) public {
-        Pool memory pool = pools[tokenId];
-        _checkPool(pool);
-        if ( !_canRedeem( pool)) {
-            revert InvalidOperation();
-        }
-        // amount to redeem. 1:1 to base tokeen balance of sender
-        uint256 amount = baseToken.balanceOf(msg.sender,tokenId);
-        if ( amount == 0 || amount > pool.balance) {
-            revert InvalidBalance();
-        }
-        // transfer base token from sender to contract
-        baseToken.safeTransferFrom(msg.sender,address(this), tokenId, amount, '0x');
-        // contract is now owner of base token, burn it
-        baseToken.burn(msg.sender,tokenId,amount);
-        // adjust balance
-        pool.balance -= amount;
-        // transfer quote token from contract to sender
-        quoteToken.transfer(msg.sender,amount);
+    ) public onlyRole(OPERATOR_ROLE) {
         
-        if ( pool.balance == 0) {
-            // delete
-            delete pools[tokenId];
-        } else {
-            // store in blockchain
-            pools[tokenId] = pool;
-        }
+        if ( _exists( _getPool(tokenId))) revert InvalidToken();
+
+       _update(tokenId, _createPool(
+            price,
+            openDate,
+            closeDate,
+            settleDate,
+            minAmount,
+            maxAmount
+        ));
     }
 
-    function _checkPool(Pool memory pool ) internal pure {
-        if (  pool.price == 0) {
-            revert InvalidToken();
-        }
-    }
-    function _canInvest( Pool memory pool ) internal view returns(bool) {
-        return pool.supply < pool.highWatermark && block.timestamp < pool.investmenEndDate && block.timestamp >= pool.investmentStartDate;
+    function getPoolAccumulatedFunds(uint256 tokenId) public view returns (uint256 amount) {
+        PoolData memory pool = _getPool(tokenId);
+        if ( !_exists(pool)) revert InvalidToken();
+        (, amount, ) = _getBalances(pool);
     }
 
-    function _canWidthdraw(  Pool memory pool) internal view returns(bool) {
-        return pool.balance > 0 && pool.supply < pool.lowWatermark && block.timestamp > pool.investmenEndDate;
+    function getBalances(uint256 tokenId) public view returns (uint256 amountBase, uint256 amountQuote, uint256 amountQuoteLocked) {
+         PoolData memory pool = _getPool(tokenId);
+          if ( !_exists(pool)) revert InvalidToken();
+        (amountBase,amountQuote,amountQuoteLocked) = _getBalances(pool);
     }
 
-    function _canRedeem( Pool memory pool) internal view returns(bool) {
-        return pool.balance > 0 && pool.supply >= pool.lowWatermark && block.timestamp > pool.settlementDate;
+    function getLimits(uint256 tokenId) public view returns (uint256 min, uint256 max) {
+         PoolData memory pool = _getPool(tokenId);
+          if ( !_exists(pool)) revert InvalidToken();
+        (min,max) = _getLimits(pool);
     }
+
+    function canInvest(uint256 tokenId) public view returns (bool) {
+        PoolData memory pool = _getPool(tokenId);
+        if ( !_exists(pool)) revert InvalidToken();
+        return _canUserInvest(pool);
+    }
+
+    function canWidthdraw(uint256 tokenId) public view returns (bool) {
+        PoolData memory pool = _getPool(tokenId);
+        if ( !_exists(pool)) revert InvalidToken();
+        return _canUserWidthdraw(pool);
+    }
+
+    function canRedeem(uint256 tokenId) public view returns (bool) {
+        PoolData memory pool = _getPool(tokenId);
+        if ( !_exists(pool)) revert InvalidToken();
+        return _canUserRedeem(pool);
+    }
+
+    function calculateAmountQuote(uint256 tokenId, uint256 amountBase) public view returns (uint256) {
+        PoolData memory pool = _getPool(tokenId);
+        if ( !_exists(pool)) revert InvalidToken();
+        return _calculateAmountQuote(pool, amountBase);
+    }
+    
+    function operatorWithdraw(uint256 tokenId) public onlyRole(OPERATOR_ROLE) {
+        PoolData memory pool = _getPool(tokenId);
+        if ( !_exists(pool)) revert InvalidToken();
+        if ( !_canOperatorWidthdraw(pool)) revert InvalidOperation();
+        uint256 amount = _getOperatorWithdrawalAmount(pool);
+        if ( amount == 0) revert InvalidBalance();
+        // transfer all accumulated quote tokens from contract to operator
+        quoteToken.transfer(msg.sender, amount);
+        _update(tokenId, _onOperatorWithdraw(pool,amount));
+        
+    }
+
+    function operatorDeposit(
+        uint256 tokenId,
+        uint256 amount
+    ) public onlyRole(OPERATOR_ROLE) {
+        PoolData memory pool = _getPool(tokenId);
+        if ( !_exists(pool)) revert InvalidToken();
+        if ( !_canOperatorDeposit(pool)) revert InvalidOperation();
+        uint256 amountIn = _getOperatorDepositAmount(pool, amount);
+         if ( amountIn == 0) revert InvalidBalance();
+        // console.log('operatorDeposit', amount,amountIn);
+        // transfer quote tokens from opeerator to contract
+        quoteToken.transferFrom(msg.sender, address(this), amountIn);
+        pool = _onOperatorDeposit(pool,amountIn);
+        _update(tokenId, pool);
+    }
+
+    function invest(uint256 tokenId, uint256 amount) public {
+        PoolData memory pool = _getPool(tokenId);
+        if ( !_exists(pool)) revert InvalidToken();
+        if (!_canUserInvest(pool)) revert InvalidOperation();
+        (uint256 amountBase, uint256 amountQuote ) = _getUserInvestmentAmounts(pool, amount);
+        if (amountBase == 0 && amountQuote == 0 ) revert InvalidAmount();
+        quoteToken.transferFrom(msg.sender, address(this), amountQuote);
+        baseToken.mint(msg.sender, tokenId, amountBase, "0x");
+        pool = _onUserInvest(pool,amountBase,amountQuote);
+        _update(tokenId, pool);
+     }
+
+    function withdraw(uint256 tokenId, uint256 amount) public {
+        PoolData memory pool = _getPool(tokenId);
+        if ( !_exists(pool)) revert InvalidToken();
+        if (!_canUserWidthdraw(pool)) revert InvalidOperation();
+        if ( amount == 0 || amount > baseToken.balanceOf(msg.sender, tokenId)) revert InvalidAmount();
+        (uint256 amountBase, uint256 amountQuote ) = _getUserWithdrawalAmount(pool,amount);
+        // console.log('withdraw', amount, amountBase, amountQuote);
+        if (amountBase == 0 || amountQuote == 0 ) revert InvalidAmount();
+        // burn tokens
+        baseToken.burn(msg.sender, tokenId, amountBase);
+         // transfer quote token from contract to sender
+        quoteToken.transfer(msg.sender, amount);
+
+        pool = _onUserWithdraw(pool, amountBase, amountQuote);
+         _update(tokenId, pool);
+
+    }
+
+    function redeem(uint256 tokenId) public {
+        PoolData memory pool = _getPool(tokenId);
+         if ( !_exists(pool)) revert InvalidToken();
+        if (!_canUserRedeem(pool)) revert InvalidOperation();
+        // amount to redeem. 1:1 to base tokeen balance of sender
+        uint256 amount = baseToken.balanceOf(msg.sender, tokenId);
+        if (amount == 0 || amount > pool.balance[0]) revert InvalidBalance();
+        // burn tokens
+        baseToken.burn(msg.sender, tokenId, amount);
+        // transfer quote token from contract to sender
+        quoteToken.transfer(msg.sender, amount);
+
+        pool = _onUserRedeem(pool, amount);
+        _update( tokenId, pool);
+
+    }   
     
 }

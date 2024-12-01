@@ -10,14 +10,26 @@ import {ERC1155Supply} from "@openzeppelin/contracts/token/ERC1155/extensions/ER
 /// @custom:security-contact security@bitbanker.org
 contract bbFix is ERC1155, AccessControl, ERC1155Supply {
     bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE");
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
   
     constructor(address defaultAdmin, address operator, string memory url)
         ERC1155(url)
     {
         _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
         _grantRole(URI_SETTER_ROLE, defaultAdmin);
-        _grantRole(OPERATOR_ROLE, operator);
+        _grantRole(MINTER_ROLE, operator);
+    }
+
+    function name() public pure returns (string memory) {
+        return "BitBanker Fixed Income";
+    }
+
+    function symbol() public pure returns (string memory) {
+        return "bbFix";
+    }
+
+    function decimals() public pure returns (uint8) {
+        return 18;
     }
 
     function setURI(string memory newuri) public onlyRole(URI_SETTER_ROLE) {
@@ -26,14 +38,14 @@ contract bbFix is ERC1155, AccessControl, ERC1155Supply {
 
     function mint(address account, uint256 id, uint256 amount, bytes memory data)
         public
-        onlyRole(OPERATOR_ROLE)
+        onlyRole(MINTER_ROLE)
     {
         _mint(account, id, amount, data);
     }
 
     function mintBatch(address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data)
         public
-        onlyRole(OPERATOR_ROLE)
+        onlyRole(MINTER_ROLE)
     {
         _mintBatch(to, ids, amounts, data);
     }
