@@ -7,8 +7,6 @@ import {bbFix} from "./bbFix.sol";
 import {ERC1155Receiver} from "./ERC1155Receiver.sol";
 import {Pool, PoolData, PoolState, InvalidParameters} from './Pool.sol';
 
-import "hardhat/console.sol";
-
 error InvalidBalance();
 error InvalidAmount();
 error InvalidOperation();
@@ -21,7 +19,12 @@ contract bbFixPool is ERC1155Receiver, Pool, AccessControl {
     bbFix public baseToken;
     // quote token (stable coin)
     ERC20 public quoteToken;
-   
+    /**
+     * @dev Pool constructor
+     * @param base Base token address
+     * @param quote Quote token address
+     * @param defaultAdmin Initial admin wallet address
+     */
     constructor(address base, address quote, address defaultAdmin) {
         if (
             base == address(0) ||
@@ -35,7 +38,17 @@ contract bbFixPool is ERC1155Receiver, Pool, AccessControl {
         quoteToken = ERC20(quote);
         _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
     }
-
+    /**
+     * @dev Create pool with given parameters
+     * @notice Only signer with OPERATOR_ROLE granted
+     * @param tokenId Token OD
+     * @param price base/quote tokeen initial exchange rate
+     * @param openDate when fund conlection start
+     * @param openDate when fund conlection stops
+     * @param settleDate when investment will be matured
+     * @param minAmount min amount of quote token to be collected
+     * @param maxAmount max amount of quote token to be collected
+     */
     function createPool(
         uint256 tokenId,
         uint256 price,
@@ -65,42 +78,80 @@ contract bbFixPool is ERC1155Receiver, Pool, AccessControl {
         (, amount, ) = _getBalances(pool);
     }
 
+    /**
+     * @dev Pool balances
+     * @param tokenId Token ID
+     * @return amountBase Base tokeen amount minted
+     * @return amountQuote Quote token amount in pool
+     * @return amountQuoteLocked Quote token amount owned by contract
+     */
     function getBalances(uint256 tokenId) public view returns (uint256 amountBase, uint256 amountQuote, uint256 amountQuoteLocked) {
          PoolData memory pool = _getPool(tokenId);
           if ( !_exists(pool)) revert InvalidToken();
         (amountBase,amountQuote,amountQuoteLocked) = _getBalances(pool);
     }
 
+    /**
+     * @dev Pool limits
+     * @param tokenId Token ID
+     * @return min Min amount of quote token to be collected
+     * @return max Max amount of quote token to be collected
+     */
     function getLimits(uint256 tokenId) public view returns (uint256 min, uint256 max) {
          PoolData memory pool = _getPool(tokenId);
           if ( !_exists(pool)) revert InvalidToken();
         (min,max) = _getLimits(pool);
     }
-
+    /**
+     * @dev Can user invest funds?
+     * @param tokenId Token ID
+     * @return boolean true user can invest funds, false otherwise
+     */
     function canInvest(uint256 tokenId) public view returns (bool) {
         PoolData memory pool = _getPool(tokenId);
         if ( !_exists(pool)) revert InvalidToken();
         return _canUserInvest(pool);
     }
 
+    /**
+     * @dev Can user withdraw previously invested funds?
+     * @param tokenId Token ID
+     * @return boolean true if user can withdraw funds, false otherwise
+     */
     function canWidthdraw(uint256 tokenId) public view returns (bool) {
         PoolData memory pool = _getPool(tokenId);
         if ( !_exists(pool)) revert InvalidToken();
         return _canUserWidthdraw(pool);
     }
 
+    /** 
+     * @dev Can user redeem previously invested funds?
+     * @param tokenId Token ID
+     * @return boolean true user can redeem investments, false otherwise
+     */
     function canRedeem(uint256 tokenId) public view returns (bool) {
         PoolData memory pool = _getPool(tokenId);
         if ( !_exists(pool)) revert InvalidToken();
         return _canUserRedeem(pool);
     }
 
+    /**
+     * @dev Calculate quote token amount from base token amount
+     * @param tokenId Token ID
+     * @param amountBase Base token amount
+     * @return uint256 Amount of quote tokens corrisponding to amountBase base tokens
+     */
     function calculateAmountQuote(uint256 tokenId, uint256 amountBase) public view returns (uint256) {
         PoolData memory pool = _getPool(tokenId);
         if ( !_exists(pool)) revert InvalidToken();
         return _calculateAmountQuote(pool, amountBase);
     }
-    
+
+    /**
+     * @dev Withdraw collected funds
+     * @notice Only signer with OPERATOR_ROLE granted
+     * @param tokenId Token OD
+     */
     function operatorWithdraw(uint256 tokenId) public onlyRole(OPERATOR_ROLE) {
         PoolData memory pool = _getPool(tokenId);
         if ( !_exists(pool)) revert InvalidToken();
@@ -113,6 +164,12 @@ contract bbFixPool is ERC1155Receiver, Pool, AccessControl {
         
     }
 
+    /**
+     * @dev Deposit collected funds with investment returns
+     * @notice Only signer with OPERATOR_ROLE granted
+     * @param tokenId Token OD
+     * @param amount Quote token amount to deposit 
+     */
     function operatorDeposit(
         uint256 tokenId,
         uint256 amount
@@ -129,6 +186,12 @@ contract bbFixPool is ERC1155Receiver, Pool, AccessControl {
         _update(tokenId, pool);
     }
 
+
+    /**
+     * @dev Invest funds 
+     * @param tokenId Token ID
+     * @param amount Quote token amount to invest 
+     */
     function invest(uint256 tokenId, uint256 amount) public {
         PoolData memory pool = _getPool(tokenId);
         if ( !_exists(pool)) revert InvalidToken();
@@ -141,6 +204,11 @@ contract bbFixPool is ERC1155Receiver, Pool, AccessControl {
         _update(tokenId, pool);
      }
 
+    /**
+     * @dev Withdraw funds 
+     * @param tokenId Token ID
+     * @param amount Quote token amount to withdraw 
+     */
     function withdraw(uint256 tokenId, uint256 amount) public {
         PoolData memory pool = _getPool(tokenId);
         if ( !_exists(pool)) revert InvalidToken();
@@ -159,6 +227,10 @@ contract bbFixPool is ERC1155Receiver, Pool, AccessControl {
 
     }
 
+    /**
+     * @dev Redeem investments 
+     * @param tokenId Token ID
+     */
     function redeem(uint256 tokenId) public {
         PoolData memory pool = _getPool(tokenId);
          if ( !_exists(pool)) revert InvalidToken();
