@@ -1,5 +1,6 @@
-import { HardhatUserConfig } from "hardhat/config";
+import { HardhatUserConfig, vars } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
+const PRIVATE_KEY = vars.get("PRIVATE_KEY");
 
 const config: HardhatUserConfig = {
   networks: {
@@ -39,9 +40,13 @@ const config: HardhatUserConfig = {
     polygon: {
       url: `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
     },
-    bnb: {
+    bsc: {
       url: `https://bsc-dataseed.binance.org/`,
     },
+    bsc_testnet: {
+      url: `https://data-seed-prebsc-1-s1.binance.org:8545`,
+      accounts: [PRIVATE_KEY]
+    }
   },
   solidity: {
     version: '0.8.27',

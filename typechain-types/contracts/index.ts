@@ -6,7 +6,6 @@ export type { bbUsdFaucetSol };
 import type * as mock from "./mock";
 export type { mock };
 export type { ERC1155Receiver } from "./ERC1155Receiver";
-export type { Lock } from "./Lock";
 export type { BbFix } from "./BbFix";
 export type { BbFixPool } from "./BbFixPool";
 export type { BbUSD } from "./BbUSD";

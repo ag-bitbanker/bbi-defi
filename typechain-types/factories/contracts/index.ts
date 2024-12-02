@@ -4,7 +4,6 @@
 export * as bbUsdFaucetSol from "./bbUSDFaucet.sol";
 export * as mock from "./mock";
 export { ERC1155Receiver__factory } from "./ERC1155Receiver__factory";
-export { Lock__factory } from "./Lock__factory";
 export { BbFix__factory } from "./BbFix__factory";
 export { BbFixPool__factory } from "./BbFixPool__factory";
 export { BbUSD__factory } from "./BbUSD__factory";

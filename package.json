@@ -17,7 +17,12 @@
   },
   "scripts": {
     "compile": "hardhat compile",
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "flatten:bbFix" : "hardhat flatten contracts/bbFix.sol > flattened/bbFix.sol",
+    "flatten:bbFixPool" : "hardhat flatten contracts/bbFixPool.sol > flattened/bbFixPool.sol",
+    "flatten:bbUSD" : "hardhat flatten contracts/bbUSD.sol > flattened/bbUSD.sol",
+    "flatten:bbUSDFaucet" : "hardhat flatten contracts/bbUSDFaucet.sol > flattened/bbUSDFaucet.sol",
+    "flatten": "npm run flatten:bbFix && npm run flatten:bbFixPool && npm run flatten:bbUSD && npm run flatten:bbUSDFaucet"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",

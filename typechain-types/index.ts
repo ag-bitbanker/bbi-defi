@@ -52,8 +52,6 @@ export type { Faucet } from "./contracts/bbUSDFaucet.sol/Faucet";
 export { Faucet__factory } from "./factories/contracts/bbUSDFaucet.sol/Faucet__factory";
 export type { ERC1155Receiver } from "./contracts/ERC1155Receiver";
 export { ERC1155Receiver__factory } from "./factories/contracts/ERC1155Receiver__factory";
-export type { Lock } from "./contracts/Lock";
-export { Lock__factory } from "./factories/contracts/Lock__factory";
 export type { BbFixMock } from "./contracts/mock/BbFixMock";
 export { BbFixMock__factory } from "./factories/contracts/mock/BbFixMock__factory";
 export type { ERC1155ReceiverMock } from "./contracts/mock/ERC1155ReceiverMock";

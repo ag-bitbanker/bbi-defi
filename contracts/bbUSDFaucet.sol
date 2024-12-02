@@ -3,7 +3,7 @@
 pragma solidity ^0.8.22;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract Faucet {
+contract bbUSDFaucet {
     uint256 constant public tokenAmount = 100_000 * 10**18;
     uint256 constant public waitTime = 30 minutes;
 
